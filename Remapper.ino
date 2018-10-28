@@ -39,9 +39,10 @@ void KbdRptParser::PrintKey(uint8_t m, uint8_t key)
 void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
 {
   Serial.print("DN ");
-  PrintKey(mod, key);
   uint8_t c = oemToAscii[key];
   Keyboard.press(c);
+
+  PrintKey(mod, key);
 }
 
 void KbdRptParser::OnKeyUp(uint8_t mod, uint8_t key)

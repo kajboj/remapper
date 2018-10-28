@@ -193,7 +193,7 @@ end
 puts('const uint8_t oemToAscii[256] = {')
 
 array.each.with_index do |symbol, index|
-  puts "  #{symbol}, // #{index.to_s(16)} #{index}"
+  puts "  /* 0x#{index.to_s(16).rjust(2, '0').upcase} #{index.to_s.rjust(3)} */ #{symbol},"
 end
 
 puts "};"

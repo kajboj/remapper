@@ -15,16 +15,21 @@ typedef struct {
   OutputKeystroke withShift;
 } InputKeystroke;
 
-#include "OemToAscii"
+typedef struct {
+  boolean isPressed;
+  uint8_t code;
+} OutputModifier;
 
-bool leftShift = false;
-bool rightShift = false;
-bool leftAlt = false;
-bool rightAlt = false;
-bool leftCtrl = false;
-bool rightCtrl = false;
-bool leftGui = false;
-bool rightGui = false;
+OutputModifier leftShift = {false, KEY_LEFT_SHIFT};
+OutputModifier rightShift = {false, KEY_RIGHT_SHIFT};
+OutputModifier leftAlt = {false, KEY_LEFT_ALT};
+OutputModifier rightAlt = {false, KEY_RIGHT_ALT};
+OutputModifier leftCtrl = {false, KEY_LEFT_CTRL};
+OutputModifier rightCtrl = {false, KEY_RIGHT_CTRL};
+OutputModifier leftGui = {false, KEY_LEFT_GUI};
+OutputModifier rightGui = {false, KEY_RIGHT_GUI};
+
+#include "OemToAscii"
 
 class KbdRptParser : public KeyboardReportParser
 {
@@ -57,7 +62,7 @@ void KbdRptParser::PrintKey(uint8_t m, uint8_t key)
 };
 
 bool isShiftPressed() {
-  return (leftShift || rightShift);
+  return (leftShift.isPressed || rightShift.isPressed);
 }
 
 OutputKeystroke* convertOemToAscii(uint8_t key) {
@@ -76,28 +81,28 @@ void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
   Serial.print("DN ");
   OutputKeystroke* output = convertOemToAscii(key);
   if (output->shift) {
-    if (!leftShift && !rightShift) {
-      Keyboard.press(KEY_LEFT_SHIFT);
+    if (!leftShift.isPressed && !rightShift.isPressed) {
+      Keyboard.press(leftShift.code);
     }
   } else {
-    if (leftShift) {
-      Keyboard.release(KEY_LEFT_SHIFT);
+    if (leftShift.isPressed) {
+      Keyboard.release(leftShift.code);
     }
-    if (rightShift) {
-      Keyboard.release(KEY_RIGHT_SHIFT);
+    if (rightShift.isPressed) {
+      Keyboard.release(rightShift.code);
     }
   }
   Keyboard.press(output->code);
   if (output->shift) {
-    if (!leftShift && !rightShift) {
-      Keyboard.release(KEY_LEFT_SHIFT);
+    if (!leftShift.isPressed && !rightShift.isPressed) {
+      Keyboard.release(leftShift.code);
     }
   } else {
-    if (leftShift) {
-      Keyboard.press(KEY_LEFT_SHIFT);
+    if (leftShift.isPressed) {
+      Keyboard.press(leftShift.code);
     }
-    if (rightShift) {
-      Keyboard.press(KEY_RIGHT_SHIFT);
+    if (rightShift.isPressed) {
+      Keyboard.press(rightShift.code);
     }
   }
 
@@ -131,44 +136,44 @@ void KbdRptParser::OnControlKeysChanged(uint8_t before, uint8_t after) {
 
   if (beforeMod.bmLeftCtrl != afterMod.bmLeftCtrl) {
     Serial.println("LeftCtrl changed");
-    handleModifierChange(afterMod.bmLeftCtrl, KEY_LEFT_CTRL);
-    leftCtrl = afterMod.bmLeftCtrl;
+    handleModifierChange(afterMod.bmLeftCtrl, leftCtrl.code);
+    leftCtrl.isPressed = afterMod.bmLeftCtrl;
   }
   if (beforeMod.bmLeftShift != afterMod.bmLeftShift) {
     Serial.println("LeftShift changed");
-    handleModifierChange(afterMod.bmLeftShift, KEY_LEFT_SHIFT);
-    leftShift = afterMod.bmLeftShift;
+    handleModifierChange(afterMod.bmLeftShift, leftShift.code);
+    leftShift.isPressed = afterMod.bmLeftShift;
   }
   if (beforeMod.bmLeftAlt != afterMod.bmLeftAlt) {
     Serial.println("LeftAlt changed");
-    handleModifierChange(afterMod.bmLeftAlt, KEY_LEFT_ALT);
-    leftAlt = afterMod.bmLeftAlt;
+    handleModifierChange(afterMod.bmLeftAlt, leftAlt.code);
+    leftAlt.isPressed = afterMod.bmLeftAlt;
   }
   if (beforeMod.bmLeftGUI != afterMod.bmLeftGUI) {
     Serial.println("LeftGUI changed");
-    handleModifierChange(afterMod.bmLeftGUI, KEY_LEFT_GUI);
-    leftGui = afterMod.bmLeftGUI;
+    handleModifierChange(afterMod.bmLeftGUI, leftGui.code);
+    leftGui.isPressed = afterMod.bmLeftGUI;
   }
 
   if (beforeMod.bmRightCtrl != afterMod.bmRightCtrl) {
     Serial.println("RightCtrl changed");
-    handleModifierChange(afterMod.bmRightCtrl, KEY_RIGHT_CTRL);
-    rightCtrl = afterMod.bmRightCtrl;
+    handleModifierChange(afterMod.bmRightCtrl, rightCtrl.code);
+    rightCtrl.isPressed = afterMod.bmRightCtrl;
   }
   if (beforeMod.bmRightShift != afterMod.bmRightShift) {
     Serial.println("RightShift changed");
-    handleModifierChange(afterMod.bmRightShift, KEY_RIGHT_SHIFT);
-    rightShift = afterMod.bmRightShift;
+    handleModifierChange(afterMod.bmRightShift, rightShift.code);
+    rightShift.isPressed = afterMod.bmRightShift;
   }
   if (beforeMod.bmRightAlt != afterMod.bmRightAlt) {
     Serial.println("RightAlt changed");
-    handleModifierChange(afterMod.bmRightAlt, KEY_RIGHT_ALT);
-    rightAlt = afterMod.bmRightAlt;
+    handleModifierChange(afterMod.bmRightAlt, rightAlt.code);
+    rightAlt.isPressed = afterMod.bmRightAlt;
   }
   if (beforeMod.bmRightGUI != afterMod.bmRightGUI) {
     Serial.println("RightGUI changed");
-    handleModifierChange(afterMod.bmRightGUI, KEY_RIGHT_GUI);
-    rightGui = afterMod.bmRightGUI;
+    handleModifierChange(afterMod.bmRightGUI, rightGui.code);
+    rightGui.isPressed = afterMod.bmRightGUI;
   }
 
 }

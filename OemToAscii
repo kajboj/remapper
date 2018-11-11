@@ -100,7 +100,7 @@ InputKeystroke oemToAscii[256] = {
   /* 0x62  98 */ {{0, false, false}, {0, true, false}},
   /* 0x63  99 */ {{0, false, false}, {0, true, false}},
   /* 0x64 100 */ {{'\\', false, false}, {'\\', true, false}},
-  /* 0x65 101 */ {{0, false, false}, {0, true, false}},
+  /* 0x65 101 */ {{rightCtrl.code, false, false}, {rightCtrl.code, true, false}},
   /* 0x66 102 */ {{0, false, false}, {0, true, false}},
   /* 0x67 103 */ {{0, false, false}, {0, true, false}},
   /* 0x68 104 */ {{0, false, false}, {0, true, false}},

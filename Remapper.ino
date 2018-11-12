@@ -4,11 +4,16 @@
 
 #include <SPI.h>
 
+typedef uint8_t ModifierAction;
+
+const ModifierAction NONE = 0;
+const ModifierAction SHIFT = 1;
+const ModifierAction NO_SHIFT = 2;
+const ModifierAction ALT = 3;
+
 typedef struct {
   uint8_t code;
-  bool shift;
-  bool alt;
-  bool repeating;
+  ModifierAction modifierAction;
 } OutputKeystroke;
 
 typedef struct {
@@ -86,33 +91,46 @@ OutputKeystroke* convertOemToAscii(uint8_t key) {
   }
 }
 
-void modifierBeforePress(bool isActive, OutputModifier *left, OutputModifier *right) {
-  if (isActive) {
-    if (!left->isPressed && !right->isPressed) {
-      Keyboard.press(left->code);
-    }
-  } else {
-    if (left->isPressed) {
-      Keyboard.release(left->code);
-    }
-    if (right->isPressed) {
-      Keyboard.release(right->code);
-    }
+void normal(uint8_t code) {
+  Keyboard.press(code);
+}
+
+void withShift(uint8_t code) {
+  if (!outputLeftShift.isPressed && !outputRightShift.isPressed) {
+    Keyboard.press(outputLeftShift.code);
+  }
+  Keyboard.press(code);
+  Keyboard.release(code);
+  if (!outputLeftShift.isPressed && !outputRightShift.isPressed) {
+    Keyboard.release(outputLeftShift.code);
   }
 }
 
-void modifierAfterPress(bool isActive, OutputModifier *left, OutputModifier *right) {
-  if (isActive) {
-    if (!left->isPressed && !right->isPressed) {
-      Keyboard.release(left->code);
-    }
-  } else {
-    if (left->isPressed) {
-      Keyboard.press(left->code);
-    }
-    if (right->isPressed) {
-      Keyboard.press(right->code);
-    }
+void withAlt(uint8_t code) {
+  if (!outputLeftAlt.isPressed && !outputRightAlt.isPressed) {
+    Keyboard.press(outputLeftAlt.code);
+  }
+  Keyboard.press(code);
+  Keyboard.release(code);
+  if (!outputLeftAlt.isPressed && !outputRightAlt.isPressed) {
+    Keyboard.release(outputLeftAlt.code);
+  }
+}
+
+void noShift(uint8_t code) {
+  if (outputLeftShift.isPressed) {
+    Keyboard.release(outputLeftShift.code);
+  }
+  if (outputRightShift.isPressed) {
+    Keyboard.release(outputRightShift.code);
+  }
+  Keyboard.press(code);
+  Keyboard.release(code);
+  if (outputLeftShift.isPressed) {
+    Keyboard.press(outputLeftShift.code);
+  }
+  if (outputRightShift.isPressed) {
+    Keyboard.press(outputRightShift.code);
   }
 }
 
@@ -121,17 +139,16 @@ void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
   Serial.print("DN ");
   OutputKeystroke* output = convertOemToAscii(key);
 
-  modifierBeforePress(output->shift, &outputLeftShift, &outputRightShift);
-  // This breaks alt
-  modifierBeforePress(output->alt, &outputLeftAlt, &outputRightAlt);
-
-  Keyboard.press(output->code);
-  if (!output->repeating) {
-    Keyboard.release(output->code);
+  switch (output->modifierAction) {
+    case NONE: normal(output->code);
+    break;
+    case SHIFT: withShift(output->code);
+    break;
+    case NO_SHIFT: noShift(output->code);
+    break;
+    case ALT: withAlt(output->code);
+    break;
   }
-
-  modifierAfterPress(output->alt, &outputLeftAlt, &outputRightAlt);
-  modifierAfterPress(output->shift, &outputLeftShift, &outputRightShift);
 
   PrintKey(mod, key);
 }
@@ -140,7 +157,11 @@ void KbdRptParser::OnKeyUp(uint8_t mod, uint8_t key)
 {
   Serial.print("UP ");
   OutputKeystroke* output = convertOemToAscii(key);
-  Keyboard.release(output->code);
+
+  if (output->modifierAction == NONE) {
+    Keyboard.release(output->code);
+  }
+
   PrintKey(mod, key);
 }
 

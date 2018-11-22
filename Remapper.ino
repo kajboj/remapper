@@ -117,6 +117,8 @@ void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
 {
   OutputKeystroke* output = convertOemToAscii(key);
 
+  //Serial.println(key);
+
   switch (output->modifierAction) {
     case NONE: normal(output->code);
     break;
@@ -138,7 +140,7 @@ void KbdRptParser::OnKeyUp(uint8_t mod, uint8_t key)
   }
 }
 
-void handleModifierChange(uint8_t modifierState, uint8_t modifierCode) {
+void triggerModifierChange(uint8_t modifierState, uint8_t modifierCode) {
   if (modifierState == 1) {
     Keyboard.press(modifierCode);
   } else {
@@ -146,48 +148,28 @@ void handleModifierChange(uint8_t modifierState, uint8_t modifierCode) {
   }
 }
 
-void KbdRptParser::OnControlKeysChanged(uint8_t before, uint8_t after) {
+void modifier(uint8_t before, uint8_t after, OutputModifier* modifier) {
+  if (before != after) {
+    triggerModifierChange(after, modifier->code);
+    modifier->isPressed = after;
+  }
+}
 
+void KbdRptParser::OnControlKeysChanged(uint8_t before, uint8_t after) {
   MODIFIERKEYS beforeMod;
   *((uint8_t*)&beforeMod) = before;
 
   MODIFIERKEYS afterMod;
   *((uint8_t*)&afterMod) = after;
 
-  if (beforeMod.bmLeftCtrl != afterMod.bmLeftCtrl) {
-    handleModifierChange(afterMod.bmLeftCtrl, leftCtrl->code);
-    leftCtrl->isPressed = afterMod.bmLeftCtrl;
-  }
-  if (beforeMod.bmLeftShift != afterMod.bmLeftShift) {
-    handleModifierChange(afterMod.bmLeftShift, leftShift->code);
-    leftShift->isPressed = afterMod.bmLeftShift;
-  }
-  if (beforeMod.bmLeftAlt != afterMod.bmLeftAlt) {
-    handleModifierChange(afterMod.bmLeftAlt, leftAlt->code);
-    leftAlt->isPressed = afterMod.bmLeftAlt;
-  }
-  if (beforeMod.bmLeftGUI != afterMod.bmLeftGUI) {
-    handleModifierChange(afterMod.bmLeftGUI, leftGui->code);
-    leftGui->isPressed = afterMod.bmLeftGUI;
-  }
-
-  if (beforeMod.bmRightCtrl != afterMod.bmRightCtrl) {
-    handleModifierChange(afterMod.bmRightCtrl, rightCtrl->code);
-    rightCtrl->isPressed = afterMod.bmRightCtrl;
-  }
-  if (beforeMod.bmRightShift != afterMod.bmRightShift) {
-    handleModifierChange(afterMod.bmRightShift, rightShift->code);
-    rightShift->isPressed = afterMod.bmRightShift;
-  }
-  if (beforeMod.bmRightAlt != afterMod.bmRightAlt) {
-    handleModifierChange(afterMod.bmRightAlt, rightAlt->code);
-    rightAlt->isPressed = afterMod.bmRightAlt;
-  }
-  if (beforeMod.bmRightGUI != afterMod.bmRightGUI) {
-    handleModifierChange(afterMod.bmRightGUI, rightGui->code);
-    rightGui->isPressed = afterMod.bmRightGUI;
-  }
-
+  modifier(beforeMod.bmLeftCtrl, afterMod.bmLeftCtrl, leftCtrl);
+  modifier(beforeMod.bmLeftShift, afterMod.bmLeftShift, leftShift);
+  modifier(beforeMod.bmLeftAlt, afterMod.bmLeftAlt, leftAlt);
+  modifier(beforeMod.bmLeftGUI, afterMod.bmLeftGUI, leftGui);
+  modifier(beforeMod.bmRightCtrl, afterMod.bmRightCtrl, rightCtrl);
+  modifier(beforeMod.bmRightShift, afterMod.bmRightShift, rightShift);
+  modifier(beforeMod.bmRightAlt, afterMod.bmRightAlt, rightAlt);
+  modifier(beforeMod.bmRightGUI, afterMod.bmRightGUI, rightGui);
 }
 
 USB     Usb;
@@ -197,8 +179,9 @@ KbdRptParser Prs;
 
 void setup()
 {
+  //Serial.begin(9600);
   Usb.Init();
-  delay( 200 );
+  delay(200);
   HidKeyboard.SetReportParser(0, &Prs);
   Keyboard.begin();
 }

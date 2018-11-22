@@ -148,7 +148,7 @@ void triggerModifierChange(uint8_t modifierState, uint8_t modifierCode) {
   }
 }
 
-void modifier(uint8_t before, uint8_t after, OutputModifier* modifier) {
+void handleModifier(uint8_t before, uint8_t after, OutputModifier* modifier) {
   if (before != after) {
     triggerModifierChange(after, modifier->code);
     modifier->isPressed = after;
@@ -162,14 +162,14 @@ void KbdRptParser::OnControlKeysChanged(uint8_t before, uint8_t after) {
   MODIFIERKEYS afterMod;
   *((uint8_t*)&afterMod) = after;
 
-  modifier(beforeMod.bmLeftCtrl, afterMod.bmLeftCtrl, leftCtrl);
-  modifier(beforeMod.bmLeftShift, afterMod.bmLeftShift, leftShift);
-  modifier(beforeMod.bmLeftAlt, afterMod.bmLeftAlt, leftAlt);
-  modifier(beforeMod.bmLeftGUI, afterMod.bmLeftGUI, leftGui);
-  modifier(beforeMod.bmRightCtrl, afterMod.bmRightCtrl, rightCtrl);
-  modifier(beforeMod.bmRightShift, afterMod.bmRightShift, rightShift);
-  modifier(beforeMod.bmRightAlt, afterMod.bmRightAlt, rightAlt);
-  modifier(beforeMod.bmRightGUI, afterMod.bmRightGUI, rightGui);
+  handleModifier(beforeMod.bmLeftCtrl, afterMod.bmLeftCtrl, leftCtrl);
+  handleModifier(beforeMod.bmLeftShift, afterMod.bmLeftShift, leftShift);
+  handleModifier(beforeMod.bmLeftAlt, afterMod.bmLeftAlt, leftAlt);
+  handleModifier(beforeMod.bmLeftGUI, afterMod.bmLeftGUI, leftGui);
+  handleModifier(beforeMod.bmRightCtrl, afterMod.bmRightCtrl, rightCtrl);
+  handleModifier(beforeMod.bmRightShift, afterMod.bmRightShift, rightShift);
+  handleModifier(beforeMod.bmRightAlt, afterMod.bmRightAlt, rightAlt);
+  handleModifier(beforeMod.bmRightGUI, afterMod.bmRightGUI, rightGui);
 }
 
 USB     Usb;

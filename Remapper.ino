@@ -5,11 +5,22 @@
 #include <SPI.h>
 
 typedef uint8_t ModifierAction;
+typedef unsigned long Millis;
 
-const ModifierAction NONE = 0;
-const ModifierAction SHIFT = 1;
-const ModifierAction NO_SHIFT = 2;
-const ModifierAction ALT = 3;
+static const ModifierAction NONE = 0;
+static const ModifierAction SHIFT = 1;
+static const ModifierAction NO_SHIFT = 2;
+static const ModifierAction ALT = 3;
+
+static const unsigned long CHORDING_DELAY = 50;
+typedef struct {
+  boolean isPressed;
+  Millis pressTime;
+  boolean normalPressed;
+  boolean modifierPressed;
+} SpecialModifier;
+
+SpecialModifier j;
 
 typedef struct {
   uint8_t code;
@@ -113,8 +124,7 @@ void noShift(uint8_t code) {
   }
 }
 
-void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
-{
+void pressKey(uint8_t key) {
   OutputKeystroke* output = convertOemToAscii(key);
 
   //Serial.println(key);
@@ -131,12 +141,45 @@ void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
   }
 }
 
+void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
+{
+  if (key == 13) {
+    j.isPressed = true;
+    j.pressTime = millis();
+    j.normalPressed = false;
+    j.modifierPressed = false;
+  } else {
+    if (j.isPressed && !j.normalPressed && !j.modifierPressed && (millis() - j.pressTime) <= CHORDING_DELAY) {
+      j.modifierPressed = true;
+      Keyboard.press(outputRightShift.code);
+    }
+    pressKey(key);
+  }
+}
+
 void KbdRptParser::OnKeyUp(uint8_t mod, uint8_t key)
 {
   OutputKeystroke* output = convertOemToAscii(key);
 
-  if (output->modifierAction == NONE) {
-    Keyboard.release(output->code);
+  if (key == 13) {
+    if (j.normalPressed) {
+      Keyboard.release(output->code);
+      j.normalPressed = false;
+    } else if (j.modifierPressed) {
+      Keyboard.release(outputRightShift.code);
+      outputRightShift.isPressed = false;
+      j.modifierPressed = false;
+    } else {
+      if (j.isPressed && (millis() - j.pressTime) <= CHORDING_DELAY) {
+        Keyboard.press(output->code);
+        Keyboard.release(output->code);
+      }
+    }
+    j.isPressed = false;
+  } else {
+    if (output->modifierAction == NONE) {
+      Keyboard.release(output->code);
+    }
   }
 }
 
@@ -189,5 +232,9 @@ void setup()
 void loop()
 {
   Usb.Task();
+  if (j.isPressed && !j.normalPressed && !j.modifierPressed && (millis() - j.pressTime) > CHORDING_DELAY) {
+    j.normalPressed = true;
+    pressKey(13);
+  }
 }
 
